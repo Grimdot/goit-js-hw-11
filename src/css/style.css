@@ -5,7 +5,7 @@
 }
 
 body {
-  margin-top: 70px;
+  margin-top: 90px;
 }
 
 .search-form {
@@ -50,4 +50,13 @@ body {
 .form-search-icon {
   width: 25px;
   height: 25px;
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.load-more {
+  display: none;
 }
