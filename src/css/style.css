@@ -8,6 +8,11 @@ body {
   margin-top: 90px;
 }
 
+img {
+  width: 500px;
+  height: 320px;
+}
+
 .search-form {
   display: block;
   display: flex;
@@ -50,6 +55,19 @@ body {
 .form-search-icon {
   width: 25px;
   height: 25px;
+}
+
+.gallery {
+  display: flex;
+  justify-content: center;
+
+  flex-wrap: wrap;
+
+  gap: 20px;
+}
+
+.photo-card {
+  box-shadow: 10px 10px 5px 0px rgba(0, 0, 0, 0.2);
 }
 
 .load-more-wrap {
