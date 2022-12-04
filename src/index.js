@@ -1,6 +1,7 @@
 import axios from 'axios';
 import simpleLightbox from 'simplelightbox';
 import Notiflix from 'notiflix';
+import InfiniteScroll from 'infinite-scroll';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
@@ -10,43 +11,40 @@ const refs = {
   galleryWrap: document.querySelector('.gallery'),
 };
 
-let page = null;
-let query = null;
-
-const onFormSubmit = e => {
-  e.preventDefault();
-  page = 1;
-
-  query = e.target.elements.searchQuery.value.trim();
-
-  axios
-    .get(
-      `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${query}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`
-    )
-    .then(r => {
-      clearMarkup();
-      renderPhotos(r.data.hits);
-      page += 1;
-    });
-};
-
-const onLoadMoreClick = () => {
-  axios
-    .get(
-      `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${query}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`
-    )
-    .then(r => {
-      renderPhotos(r.data.hits);
-      page += 1;
-    });
-};
+let currentQuery = null;
 
 const clearMarkup = () => {
   refs.galleryWrap.innerHTML = '';
 };
 
+const onFormSubmit = e => {
+  e.preventDefault();
+  const query = e.target.elements.searchQuery.value.trim();
+  currentQuery = query;
+
+  axios
+    .get(
+      `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${query}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page=1`
+    )
+    .then(r => {
+      clearMarkup();
+      renderPhotos(r.data.hits);
+    });
+
+  let infScroll = new InfiniteScroll(refs.galleryWrap, {
+    path: `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${currentQuery}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page={{#}}`,
+    history: false,
+    responseBody: 'json',
+    checkLastPage: '.photo-card',
+  });
+
+  infScroll.on('load', response => {
+    renderPhotos(response.hits);
+  });
+};
+
 const renderPhotos = photos => {
-  if (photos.length === 0) {
+  if (!photos.length) {
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
@@ -80,15 +78,7 @@ const renderPhotos = photos => {
 
   refs.galleryWrap.insertAdjacentHTML('beforeend', markup.join(''));
 
-  showLoadMoreBtn();
-
-  const lightbox = new SimpleLightbox('.gallery a');
-};
-
-const showLoadMoreBtn = () => {
-  refs.loadMoreBtn.classList.remove('hidden');
+  const lightbox = new simpleLightbox('.gallery a');
 };
 
 refs.searchForm.addEventListener('submit', onFormSubmit);
-
-refs.loadMoreBtn.addEventListener('click', onLoadMoreClick);
