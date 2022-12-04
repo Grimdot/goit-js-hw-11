@@ -1,9 +1,13 @@
-import axios from 'axios';
 import simpleLightbox from 'simplelightbox';
 import Notiflix from 'notiflix';
-import InfiniteScroll from 'infinite-scroll';
+import InfiniteScroll, { data } from 'infinite-scroll';
+import GalleryApiService from './gallery-sevice';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
+
+const API_KEY = '31815472-6ffac1728c09639d971d276fb';
+const apiParams =
+  '&image-type=photo&orientation=horizontal&safesearch=true&per_page=40';
 
 const refs = {
   searchForm: document.querySelector('.search-form'),
@@ -11,69 +15,51 @@ const refs = {
   galleryWrap: document.querySelector('.gallery'),
 };
 
-let currentQuery = null;
+const galleryApiService = new GalleryApiService();
 
 const clearMarkup = () => {
   refs.galleryWrap.innerHTML = '';
 };
 
-const onFormSubmit = e => {
-  e.preventDefault();
-  const query = e.target.elements.searchQuery.value.trim();
-  currentQuery = query;
+const render = photos => {
+  if (galleryApiService.page === 1 && photos.totalHits != 0) {
+    Notiflix.Notify.success(`"Hooray! We found ${photos.totalHits} images."`);
+  }
 
-  axios
-    .get(
-      `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${query}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page=1`
-    )
-    .then(r => {
-      clearMarkup();
-      renderPhotos(r.data.hits);
-    });
-
-  let infScroll = new InfiniteScroll(refs.galleryWrap, {
-    path: `https://pixabay.com/api/?key=31815472-6ffac1728c09639d971d276fb&q=${currentQuery}&image-type=photo&orientation=horizontal&safesearch=true&per_page=40&page={{#}}`,
-    history: false,
-    responseBody: 'json',
-    checkLastPage: '.photo-card',
-  });
-
-  infScroll.on('load', response => {
-    renderPhotos(response.hits);
-  });
-};
-
-const renderPhotos = photos => {
-  if (!photos.length) {
+  if (!photos.hits.length) {
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
+    refs.loadMoreBtn.classList.add('hidden');
     return;
   }
+  if (galleryApiService.page === galleryApiService.totalPages) {
+    refs.loadMoreBtn.classList.add('hidden');
+  }
 
-  const markup = photos.map(
+  const markup = photos.hits.map(
     ({ webformatURL, likes, views, comments, downloads, largeImageURL }) => `
-  <div class="photo-card">
-  <a href="${largeImageURL}"><img src="${webformatURL}" alt="" loading="lazy" /></a>
-  <div class="info">
-    <p class="info-item">
-      <b>Likes</b>
-      <span>${likes}</span>
-    </p>
-    <p class="info-item">
-      <b>Views</b>
-      <span>${views}</span>
-    </p>
-    <p class="info-item">
-      <b>Comments</b>
-      <span>${comments}</span>
-    </p>
-    <p class="info-item">
-      <b>Downloads</b>
-      <span>${downloads}</span>
-    </p>
-  </div>
-</div>`
+    <div class="photo-card">
+    <a href="${largeImageURL}"><img src="${webformatURL}" alt="" loading="lazy" /></a>
+    <div class="info">
+      <p class="info-item">
+        <b>Likes</b>
+        <span>${likes}</span>
+      </p>
+      <p class="info-item">
+        <b>Views</b>
+        <span>${views}</span>
+      </p>
+      <p class="info-item">
+        <b>Comments</b>
+        <span>${comments}</span>
+      </p>
+      <p class="info-item">
+        <b>Downloads</b>
+        <span>${downloads}</span>
+      </p>
+    </div>
+  </div>`
   );
 
   refs.galleryWrap.insertAdjacentHTML('beforeend', markup.join(''));
@@ -81,4 +67,34 @@ const renderPhotos = photos => {
   const lightbox = new simpleLightbox('.gallery a');
 };
 
+const onFormSubmit = e => {
+  e.preventDefault();
+  clearMarkup();
+  galleryApiService.resetPages();
+
+  const query = e.target.elements.searchQuery.value.trim();
+  galleryApiService.currentQuery = query;
+
+  galleryApiService.fetchGallery().then(r => {
+    galleryApiService.totalPages = Math.ceil(r.data.totalHits / 40);
+    refs.loadMoreBtn.classList.remove('hidden');
+
+    render(r.data);
+  });
+};
+
+const onLoadMoreClick = () => {
+  galleryApiService.currentPage += 1;
+
+  galleryApiService.fetchGallery().then(r => {
+    render(r.data);
+
+    console.log(
+      galleryApiService.totalAmountOfPages,
+      galleryApiService.currentPage
+    );
+  });
+};
+
 refs.searchForm.addEventListener('submit', onFormSubmit);
+refs.loadMoreBtn.addEventListener('click', onLoadMoreClick);
