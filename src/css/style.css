@@ -74,10 +74,11 @@ img {
 .load-more-wrap {
   display: flex;
   justify-content: center;
+
+  margin-top: 30px;
 }
 
 .load-more {
-  margin-top: 30px;
   width: 200px;
   height: 60px;
 
@@ -85,6 +86,15 @@ img {
   border-radius: 6px;
   background-color: #fff;
   border: 3px solid #465298;
+}
+
+.load-more:hover,
+.load-more:focus {
+  box-shadow: 3px 3px 5px 0px rgba(0, 0, 0, 0.2);
+}
+
+.load-more:active {
+  box-shadow: -3px -3px 5px 0px rgba(0, 0, 0, 0.2);
 }
 
 .hidden {

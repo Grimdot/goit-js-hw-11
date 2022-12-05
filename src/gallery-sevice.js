@@ -4,7 +4,7 @@ const API_KEY = '31815472-6ffac1728c09639d971d276fb';
 const apiParams =
   '&image-type=photo&orientation=horizontal&safesearch=true&per_page=40';
 
-export default class GalleryApiService {
+export default class GalleryService {
   constructor() {
     this.currentQuery = '';
     this.currentPage = 1;

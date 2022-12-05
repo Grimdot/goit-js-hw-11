@@ -1,13 +1,8 @@
 import simpleLightbox from 'simplelightbox';
 import Notiflix from 'notiflix';
-import InfiniteScroll, { data } from 'infinite-scroll';
-import GalleryApiService from './gallery-sevice';
+import GalleryService from './gallery-sevice';
 
 import 'simplelightbox/dist/simple-lightbox.min.css';
-
-const API_KEY = '31815472-6ffac1728c09639d971d276fb';
-const apiParams =
-  '&image-type=photo&orientation=horizontal&safesearch=true&per_page=40';
 
 const refs = {
   searchForm: document.querySelector('.search-form'),
@@ -15,28 +10,44 @@ const refs = {
   galleryWrap: document.querySelector('.gallery'),
 };
 
-const galleryApiService = new GalleryApiService();
+const galleryService = new GalleryService();
 
 const clearMarkup = () => {
   refs.galleryWrap.innerHTML = '';
 };
 
-const render = photos => {
-  if (galleryApiService.page === 1 && photos.totalHits != 0) {
-    Notiflix.Notify.success(`"Hooray! We found ${photos.totalHits} images."`);
+const showLoadMoreBtn = () => {
+  refs.loadMoreBtn.classList.remove('hidden');
+};
+
+const hideLoadMoreBtn = () => {
+  refs.loadMoreBtn.classList.add('hidden');
+};
+
+const notify = photosObj => {
+  const { totalHits, hits } = photosObj;
+
+  if (galleryService.page === galleryService.totalPages) {
+    Notiflix.Notify.info(
+      `We're sorry, but you've reached the end of search results.`
+    );
+    hideLoadMoreBtn();
   }
 
-  if (!photos.hits.length) {
+  if (galleryService.page === 1 && totalHits != 0) {
+    Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+  }
+
+  if (!hits.length) {
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
-    refs.loadMoreBtn.classList.add('hidden');
+    hideLoadMoreBtn();
     return;
   }
-  if (galleryApiService.page === galleryApiService.totalPages) {
-    refs.loadMoreBtn.classList.add('hidden');
-  }
+};
 
+const render = photos => {
   const markup = photos.hits.map(
     ({ webformatURL, likes, views, comments, downloads, largeImageURL }) => `
     <div class="photo-card">
@@ -69,30 +80,37 @@ const render = photos => {
 
 const onFormSubmit = e => {
   e.preventDefault();
+  hideLoadMoreBtn();
   clearMarkup();
-  galleryApiService.resetPages();
+  galleryService.resetPages();
 
   const query = e.target.elements.searchQuery.value.trim();
-  galleryApiService.currentQuery = query;
 
-  galleryApiService.fetchGallery().then(r => {
-    galleryApiService.totalPages = Math.ceil(r.data.totalHits / 40);
-    refs.loadMoreBtn.classList.remove('hidden');
+  galleryService.currentQuery = query;
 
+  galleryService.fetchGallery().then(r => {
+    galleryService.totalPages = Math.ceil(r.data.totalHits / 40);
+
+    showLoadMoreBtn();
     render(r.data);
+    notify(r.data);
   });
 };
 
 const onLoadMoreClick = () => {
-  galleryApiService.currentPage += 1;
+  galleryService.currentPage += 1;
 
-  galleryApiService.fetchGallery().then(r => {
+  galleryService.fetchGallery().then(r => {
     render(r.data);
+    notify(r.data);
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
 
-    console.log(
-      galleryApiService.totalAmountOfPages,
-      galleryApiService.currentPage
-    );
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
   });
 };
 
