@@ -101,6 +101,10 @@ img {
   display: none;
 }
 
+.end-line {
+  border: none;
+}
+
 .info {
   display: flex;
   justify-content: space-evenly;
