@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 const API_KEY = '31815472-6ffac1728c09639d971d276fb';
-const apiParams =
-  '&image-type=photo&orientation=horizontal&safesearch=true&per_page=40';
+const CARDS_PER_PAGE = 40;
+
+const apiParams = `&image-type=photo&orientation=horizontal&safesearch=true&per_page=${CARDS_PER_PAGE}`;
+axios.defaults.baseURL = 'https://pixabay.com/api/';
 
 export default class GalleryService {
   constructor() {
@@ -13,8 +15,12 @@ export default class GalleryService {
 
   fetchGallery() {
     return axios.get(
-      `https://pixabay.com/api/?key=${API_KEY}&q=${this.currentQuery}${apiParams}&page=${this.currentPage}`
+      `?key=${API_KEY}&q=${this.currentQuery}${apiParams}&page=${this.currentPage}`
     );
+  }
+
+  calculateTotalPagesAmount(amountOfCards) {
+    this.totalAmountOfPages = Math.ceil(amountOfCards / CARDS_PER_PAGE);
   }
 
   resetPages() {
